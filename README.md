@@ -182,12 +182,6 @@ GitHub Actions pipeline on push to `main`:
 
 ## 📋 Project Context
 
-Built as part of two academic courses:
-- **Projekt Zespołowy** — team software project
-- **BIAWC** — business intelligence & web applications
-
-Development approach: **Vibe Coding** — AI-assisted development using Cursor, Windsurf, and GitHub Copilot throughout the sprint.
-
 ---
 
 ## 📄 License
