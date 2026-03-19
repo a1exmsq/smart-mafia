@@ -1,36 +1,195 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🃏 Smart Mafia — AI Voice Companion
 
-## Getting Started
+> A real-time Mafia party game with an AI-powered host. Built with Next.js, Socket.io, and OpenAI.
 
-First, run the development server:
+---
+
+## 📦 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 15 (App Router), CSS Modules |
+| Real-time | Socket.io (planned) |
+| AI Host | OpenAI API / Claude API |
+| Database | PostgreSQL (planned) |
+| DevOps | Docker, GitHub Actions, AWS EC2 |
+
+---
+
+## 🗂 Project Structure
+
+```
+mafia-app/
+├── app/
+│   ├── globals.css          # Design tokens, base styles
+│   ├── layout.js            # Root layout
+│   ├── page.js              # Landing page (/)
+│   ├── join/
+│   │   └── page.js          # Join or create room (/join)
+│   └── room/
+│       └── page.js          # Game room (/room)
+├── components/
+│   ├── Navbar/              # Fixed top navigation
+│   ├── Hero/                # Landing hero section
+│   ├── HowItWorks/          # 3-step explainer
+│   ├── Features/            # Feature grid
+│   ├── Team/                # Team cards
+│   ├── Footer/              # Footer
+│   ├── JoinRoom/            # Join/Create room form + avatar picker
+│   └── GameRoom/            # Game interface, chat, voting, roles
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Set up environment variables
+
+Create a `.env.local` file in the project root:
+
+```env
+OPENAI_API_KEY=sk-your-key-here
+NEXT_PUBLIC_SOCKET_URL=http://localhost:4000
+```
+
+### 3. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🎮 How the App Works (Current MVP)
 
-## Learn More
+### Pages
 
-To learn more about Next.js, take a look at the following resources:
+| Route | Description |
+|---|---|
+| `/` | Landing page with hero, features, team |
+| `/join` | Two-panel form — join existing room or create new one |
+| `/room` | Full game interface |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Game Flow
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Player goes to `/join`
+2. Enters their **name**, picks an **emoji avatar**
+3. Either enters a **room code** (join) or gets a **generated code** (create)
+4. Player data is saved to `sessionStorage` and they're redirected to `/room`
+5. In the room: host starts the game → roles assigned → phases cycle Night → Day → Vote
+6. AI host responds to each phase transition and player messages
 
-## Deploy on Vercel
+### Roles
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Role | Ability |
+|---|---|
+| 🔫 Mafia | Eliminate a citizen each night |
+| 🔍 Detective | Investigate one player each night |
+| 💊 Doctor | Save one player each night |
+| 👤 Citizen | Vote out the Mafia during the day |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### AI Host (current: mock)
+
+The AI host has a pool of atmospheric, noir-style responses per game phase. When real API is connected, it receives full game state (alive players, phase, chat history) and responds in character.
+
+---
+
+## 🔌 What's Needed for Full Multiplayer
+
+### 1. OpenAI API Key
+```env
+OPENAI_API_KEY=sk-...
+```
+Enables the real AI host. Without it, the mock response pool is used.
+
+### 2. Socket.io Backend Server
+
+A Node.js server is needed to sync game state across all players in real time.
+
+Planned endpoints:
+- `join-room` — player joins a room
+- `start-game` — host starts, server assigns roles
+- `phase-change` — host advances phase, all clients update
+- `cast-vote` — player vote broadcast to room
+- `chat-message` — message relayed to all players
+
+Deploy target: **AWS EC2** (as per project plan) or Railway/Render for quick testing.
+
+### 3. PostgreSQL Database (optional for MVP)
+
+For persisting rooms between server restarts.
+
+Tables planned:
+- `rooms` — code, phase, created_at
+- `players` — name, avatar, role, room_id, status
+- `messages` — room_id, player_id, content, timestamp
+
+---
+
+## 🐳 Docker (Planned)
+
+```yaml
+# docker-compose.yml (planned)
+services:
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+  backend:
+    build: ./server
+    ports:
+      - "4000:4000"
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: mafia
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+```
+
+---
+
+## 🔄 CI/CD (Planned)
+
+GitHub Actions pipeline on push to `main`:
+
+1. Install dependencies
+2. Run linter
+3. Run tests (Jest)
+4. Build Docker image
+5. Push to AWS EC2
+
+---
+
+## 👥 Team
+
+| Name | Role |
+|---|---|
+| Tymofii Snisarenko | Scrum Master · QA · DevOps |
+| Andrii Butenko | Frontend · UI/UX |
+| Artem Kulinich | Backend · Game Logic |
+| Aliaksandr Dailid | Fullstack · AI & API |
+
+---
+
+## 📋 Project Context
+
+Built as part of two academic courses:
+- **Projekt Zespołowy** — team software project
+- **BIAWC** — business intelligence & web applications
+
+Development approach: **Vibe Coding** — AI-assisted development using Cursor, Windsurf, and GitHub Copilot throughout the sprint.
+
+---
+
+## 📄 License
+
+MIT — Academic project, 2025.
