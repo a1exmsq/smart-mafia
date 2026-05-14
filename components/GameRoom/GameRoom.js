@@ -12,6 +12,38 @@ import {
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3002';
 
+// ── Typewriter effect for AI messages ─────────────────────────────────────────
+function TypewriterText({ text, speed = 28, onDone }) {
+  const [displayed, setDisplayed] = useState('');
+  const idxRef = useRef(0);
+  const onDoneRef = useRef(onDone);
+
+  useEffect(() => { onDoneRef.current = onDone; });
+
+  useEffect(() => {
+    idxRef.current = 0;
+    setDisplayed('');
+    const interval = setInterval(() => {
+      idxRef.current += 1;
+      setDisplayed(text.slice(0, idxRef.current));
+      if (idxRef.current >= text.length) {
+        clearInterval(interval);
+        onDoneRef.current?.();
+      }
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  return (
+    <span>
+      {displayed}
+      {displayed.length < text.length && (
+        <span style={{ animation: 'blink 0.8s step-end infinite', color: '#C9A84C' }}>▎</span>
+      )}
+    </span>
+  );
+}
+
 const PHASE_LABELS = {
   lobby: 'Lobby', intro: 'Evening — Introductions',
   night: 'Night Phase', day: 'Day Phase',
@@ -83,6 +115,8 @@ export default function GameRoom() {
   const [avatarMap, setAvatarMap] = useState({});
   // count of night_action_confirmed events received this night
   const [nightActionsReceived, setNightActionsReceived] = useState(0);
+  // voice narration toggle
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
 
   const socketRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -92,6 +126,7 @@ export default function GameRoom() {
   const joinedRef = useRef(false);
   const timerIntervalRef = useRef(null);
   const avatarMapRef = useRef({});
+  const voiceEnabledRef = useRef(true);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -245,7 +280,18 @@ export default function GameRoom() {
       });
       socket.on('ai_narration', data => {
         setAiThinking(false);
-        if (data?.text) addMsg('AI Host', data.text, 'host');
+        if (data?.text) {
+          const typingMsg = {
+            id: Date.now() + Math.random(),
+            from: 'AI Host',
+            text: data.text,
+            type: 'host',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            typing: true,
+          };
+          setMessages(prev => [...prev, typingMsg]);
+          speakText(data.text);
+        }
       });
       socket.on('system_message', data => {
         if (data?.text) addMsg('System', data.text, 'system');
@@ -401,6 +447,31 @@ export default function GameRoom() {
     // Show own message locally (server echoes to others only)
     addMsg(playerRef.current?.name || 'You', msg, 'player');
     socketRef.current.emit('send_message', { text: msg });
+  };
+
+  const speakText = useCallback((text) => {
+    if (!voiceEnabledRef.current) return;
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel(); // stop any current speech
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'en-US';
+    utt.rate = 0.92;
+    utt.pitch = 0.85;
+    utt.volume = 1;
+    // prefer a deep/dramatic voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v =>
+      v.lang.startsWith('en') && /male|david|george|daniel|alex/i.test(v.name)
+    ) || voices.find(v => v.lang.startsWith('en'));
+    if (preferred) utt.voice = preferred;
+    window.speechSynthesis.speak(utt);
+  }, []);
+
+  const toggleVoice = () => {
+    const next = !voiceEnabledRef.current;
+    voiceEnabledRef.current = next;
+    setVoiceEnabled(next);
+    if (!next) window.speechSynthesis?.cancel();
   };
 
   const handleAskAI = () => {
@@ -910,7 +981,15 @@ export default function GameRoom() {
                     <span className={styles.msgTime}>{msg.time}</span>
                   </div>
                 )}
-                <p className={styles.msgText}>{msg.text}</p>
+                <p className={styles.msgText}>
+                  {msg.typing ? (
+                    <TypewriterText
+                      text={msg.text}
+                      speed={18}
+                      onDone={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, typing: false } : m))}
+                    />
+                  ) : msg.text}
+                </p>
               </div>
             ))}
             {aiThinking && (
@@ -923,6 +1002,17 @@ export default function GameRoom() {
           </div>
 
           <div className={styles.chatInput}>
+            <button
+              onClick={toggleVoice}
+              title={voiceEnabled ? 'Voice ON — click to mute' : 'Voice OFF — click to enable'}
+              style={{
+                background: voiceEnabled ? 'rgba(201,146,42,0.15)' : 'rgba(80,80,80,0.15)',
+                border: `1px solid ${voiceEnabled ? '#C9A84C' : '#444'}`,
+                borderRadius: '6px', color: voiceEnabled ? '#C9A84C' : '#555',
+                cursor: 'pointer', fontSize: '16px', padding: '6px 10px',
+                flexShrink: 0,
+              }}
+            >{voiceEnabled ? '🔊' : '🔇'}</button>
             <input className={styles.chatField} type="text"
               placeholder={aiThinking ? 'AI is thinking...' : 'Message everyone...'}
               value={input}
@@ -931,7 +1021,7 @@ export default function GameRoom() {
               disabled={aiThinking}
             />
             <button className={styles.sendBtn} onClick={handleSend}
-              disabled={!input.trim()} title="Отправить в чат">↑</button>
+              disabled={!input.trim()} title="Send message">↑</button>
             {isHost && (
               <button onClick={handleAskAI}
                 disabled={aiThinking || !input.trim()}
