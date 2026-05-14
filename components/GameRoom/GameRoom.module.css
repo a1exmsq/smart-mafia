@@ -1,3 +1,8 @@
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .page {
   height: 100vh;
   display: flex;
@@ -153,6 +158,95 @@
   background: rgba(192,57,43,0.12) !important;
   transform: translateX(2px);
 }
+
+/* Nominated player highlight (day phase) */
+.nominated {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.07);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.12);
+}
+
+/* Nomination & timer action buttons on player cards */
+.nominateBtn {
+  flex-shrink: 0;
+  padding: 0.18rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-family: var(--font-heading);
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+.nominateBtn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: #ef4444;
+}
+.nominateBtn.active {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+.timerBtn {
+  flex-shrink: 0;
+  padding: 0.18rem 0.42rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  border: 1px solid rgba(201,146,42,0.35);
+  background: rgba(201,146,42,0.07);
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+.timerBtn:hover {
+  background: rgba(201,146,42,0.18);
+  border-color: var(--gold);
+}
+
+/* Speech timer overlay */
+.timerOverlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 0.65rem 2rem;
+  background: rgba(201,146,42,0.07);
+  border-bottom: 1px solid rgba(201,146,42,0.2);
+  flex-shrink: 0;
+  animation: msgIn 0.3s ease both;
+}
+.timerLabel {
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.timerName {
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--cream);
+}
+.timerStopBtn {
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(192,57,43,0.4);
+  background: rgba(192,57,43,0.08);
+  color: var(--red);
+  font-family: var(--font-heading);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.timerStopBtn:hover { background: rgba(192,57,43,0.2); border-color: var(--red); }
 
 .playerAvatar {
   font-size: 1.3rem;
